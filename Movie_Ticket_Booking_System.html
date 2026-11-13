@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Movie Ticket Booking System</title>
+<style>
+*{box-sizing:border-box}body{margin:0;background:#f4f6fb;color:#172033;font-family:Arial,sans-serif}
+header{background:#17152f;color:#fff;padding:25px 6%;display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap}
+header h1{margin:0;font-size:25px}header p{margin:7px 0 0;color:#c9c7dc}
+main{max-width:1100px;margin:28px auto;padding:0 18px}.section-title{margin:0 0 16px}
+.movies{display:grid;grid-template-columns:repeat(3,1fr);gap:18px}
+.movie{background:white;border-radius:13px;overflow:hidden;box-shadow:0 4px 16px #10182812}
+.poster{height:150px;display:grid;place-items:center;color:white;font-size:30px;font-weight:bold;background:linear-gradient(135deg,#312e81,#7c3aed)}
+.poster.two{background:linear-gradient(135deg,#0f766e,#22c55e)}.poster.three{background:linear-gradient(135deg,#9a3412,#f59e0b)}
+.movie-info{padding:16px}.movie-info h3{margin:0 0 7px}.muted{color:#64748b;font-size:13px}.movie-info button{margin-top:12px;width:100%}
+.panel{background:white;border-radius:13px;padding:20px;margin-top:24px;box-shadow:0 4px 16px #10182812}
+button{border:0;border-radius:7px;padding:11px 15px;background:#5b4bdb;color:white;font-weight:bold;cursor:pointer}button:hover{filter:brightness(.94)}
+select,input{padding:10px;border:1px solid #cbd5e1;border-radius:7px;background:white}
+.controls{display:flex;gap:12px;flex-wrap:wrap;align-items:center;margin:14px 0}
+.screen{margin:24px auto 22px;max-width:480px;text-align:center;padding:9px;background:#dbeafe;color:#1e40af;border-radius:50% 50% 8px 8px;font-size:13px;letter-spacing:3px}
+.seats{display:grid;grid-template-columns:repeat(8,1fr);gap:9px;max-width:440px;margin:auto}
+.seat{padding:10px 0;background:#e2e8f0;color:#334155;border-radius:6px;font-size:12px}
+.seat.selected{background:#5b4bdb;color:white}.seat.booked{background:#cbd5e1;color:#94a3b8;cursor:not-allowed}
+.legend{display:flex;justify-content:center;gap:18px;flex-wrap:wrap;margin:16px;font-size:12px;color:#475569}
+.dot{display:inline-block;width:11px;height:11px;border-radius:3px;margin-right:5px;background:#e2e8f0}.dot.sel{background:#5b4bdb}.dot.book{background:#cbd5e1}
+.summary{display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;align-items:center;border-top:1px solid #e2e8f0;margin-top:20px;padding-top:16px}
+#message{margin-top:14px;padding:12px;border-radius:8px;display:none;background:#dcfce7;color:#166534}
+#bookings{margin-top:12px}.booking{padding:10px;border-bottom:1px solid #e2e8f0;font-size:14px}
+@media(max-width:760px){.movies{grid-template-columns:1fr 1fr}}@media(max-width:500px){.movies{grid-template-columns:1fr}.seats{gap:5px}.seat{font-size:10px}}
+</style>
+</head>
+<body>
+<header><div><h1>🎬 Movie Ticket Booking</h1><p>Choose a movie, select your seats and book your tickets</p></div><strong>ONLINE CINEMA</strong></header>
+<main>
+<h2 class="section-title">Now Showing</h2>
+<section class="movies">
+<article class="movie"><div class="poster">SPACE<br>ADVENTURE</div><div class="movie-info"><h3>Space Adventure</h3><div class="muted">Sci-Fi • 2h 10m • U/A</div><button onclick="chooseMovie('Space Adventure')">Book Tickets</button></div></article>
+<article class="movie"><div class="poster two">THE<br>GREEN WORLD</div><div class="movie-info"><h3>The Green World</h3><div class="muted">Adventure • 1h 55m • U</div><button onclick="chooseMovie('The Green World')">Book Tickets</button></div></article>
+<article class="movie"><div class="poster three">MYSTERY<br>HOUSE</div><div class="movie-info"><h3>Mystery House</h3><div class="muted">Thriller • 2h 05m • U/A</div><button onclick="chooseMovie('Mystery House')">Book Tickets</button></div></article>
+</section>
+<section class="panel" id="bookingPanel">
+<h2>Book Your Seats</h2>
+<div class="controls">
+<label>Movie <select id="movie"><option>Space Adventure</option><option>The Green World</option><option>Mystery House</option></select></label>
+<label>Date <input id="date" type="date"></label>
+<label>Show time <select id="time"><option>10:00 AM</option><option>1:30 PM</option><option>6:00 PM</option><option>9:30 PM</option></select></label>
+</div>
+<div class="screen">SCREEN THIS WAY</div>
+<div class="seats" id="seats"></div>
+<div class="legend"><span><i class="dot"></i>Available</span><span><i class="dot sel"></i>Selected</span><span><i class="dot book"></i>Booked (demo)</span></div>
+<div class="summary"><div><strong id="seatCount">0</strong> seat(s) selected<br><span class="muted">Ticket price: ₹150 per seat</span></div><div><strong>Total: ₹<span id="total">0</span></strong></div><button id="confirm">Confirm Booking</button></div>
+<div id="message"></div>
+</section>
+<section class="panel"><h2>Recent Bookings</h2><div id="bookings" class="muted">No bookings yet.</div></section>
+</main>
+<script>
+const PRICE=150, selected=new Set(), booked=new Set(["A4","B6","C3","D7"]);
+const seatArea=document.getElementById("seats");
+const rows=["A","B","C","D","E"], movie=document.getElementById("movie");
+function renderSeats(){
+ seatArea.replaceChildren();
+ rows.forEach(row=>{for(let n=1;n<=8;n++){
+  const id=row+n,b=document.createElement("button");b.type="button";b.textContent=id;
+  b.className="seat"+(booked.has(id)?" booked":selected.has(id)?" selected":"");
+  b.disabled=booked.has(id);
+  b.addEventListener("click",()=>{selected.has(id)?selected.delete(id):selected.add(id);renderSeats();updateTotal()});
+  seatArea.append(b);
+ }});
+}
+function updateTotal(){document.getElementById("seatCount").textContent=selected.size;document.getElementById("total").textContent=selected.size*PRICE}
+function chooseMovie(name){movie.value=name;document.getElementById("bookingPanel").scrollIntoView({behavior:"smooth"})}
+document.getElementById("date").min=new Date().toISOString().split("T")[0];
+document.getElementById("date").value=new Date().toISOString().split("T")[0];
+document.getElementById("confirm").addEventListener("click",()=>{
+ const date=document.getElementById("date").value,time=document.getElementById("time").value;
+ const message=document.getElementById("message");
+ if(!date){alert("Please select a booking date.");return}
+ if(!selected.size){alert("Please select at least one available seat.");return}
+ const seats=[...selected].sort().join(", ");
+ const booking={movie:movie.value,date,time,seats,total:selected.size*PRICE,ref:"MOV"+Date.now().toString().slice(-7)};
+ const list=JSON.parse(localStorage.getItem("movieBookings")||"[]");list.unshift(booking);localStorage.setItem("movieBookings",JSON.stringify(list));
+ selected.forEach(s=>booked.add(s));selected.clear();renderSeats();updateTotal();
+ message.style.display="block";message.textContent=`Booking confirmed! Reference: ${booking.ref}. ${booking.movie} | ${booking.date} | ${booking.time} | Seats: ${booking.seats} | Total: ₹${booking.total}`;
+ renderBookings();
+});
+function renderBookings(){
+ const list=JSON.parse(localStorage.getItem("movieBookings")||"[]"),area=document.getElementById("bookings");area.replaceChildren();
+ if(!list.length){area.textContent="No bookings yet.";return}
+ list.forEach(b=>{const div=document.createElement("div");div.className="booking";div.textContent=`${b.ref} — ${b.movie} | ${b.date}, ${b.time} | Seats: ${b.seats} | ₹${b.total}`;area.append(div)});
+}
+renderSeats();updateTotal();renderBookings();
+</script>
+</body>
+</html>
